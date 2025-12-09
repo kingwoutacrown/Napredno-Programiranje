@@ -208,6 +208,14 @@ class University {
         departments1.add(fourSmallest);
         return new University(departments1);
     }
+    int getTotalCredits() {
+        return departments.stream().flatMap(d -> d.getCourses().stream())
+                .collect(Collectors.summingInt(Course::getCredits));
+    }
+    List<Department> getDepartmentsWithAtLeastOneHardCourse(int difficultyThreshold) {
+        return departments.stream().filter(d -> d.getCourses().stream().anyMatch(c-> c.getDifficulty()>=difficultyThreshold))
+                .collect(Collectors.toList());
+    }
 }
 
 public class UniversityTest {
