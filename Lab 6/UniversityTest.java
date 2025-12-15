@@ -1,7 +1,6 @@
 //package midterms.m1;
 
 import java.util.*;
-import java.util.function.Function;
 import java.util.stream.*;
 
 class Course {
@@ -80,43 +79,44 @@ class University {
 
 
     public List<String> getAllCourseNames() {
-        return departments.stream().flatMap(
-                        d -> d.getCourses().stream()
-                                .map(Course::getName))
+        return departments.stream().flatMap(d -> d.getCourses().stream().map(Course::getName))
                 .collect(Collectors.toList());
     }
 
     public List<Course> getCoursesWithMinCredits(int minCredits) {
-        return departments.stream().flatMap(d->d.getCourses().stream().filter(c -> c.getCredits()>=minCredits))
+        return departments.stream().flatMap(d -> d.getCourses().stream())
+                .filter(c -> c.getCredits()>= minCredits)
                 .collect(Collectors.toList());
     }
 
     public int getTotalStudentCount() {
-        return departments.stream().flatMap(d -> d.getCourses()
-                .stream()).mapToInt(Course::getEnrolledStudents).sum();
+        return departments.stream().flatMap(d -> d.getCourses().stream())
+                .mapToInt(Course::getEnrolledStudents).sum();
     }
 
     public Optional<Course> getHardestCourse() {
-        return departments.stream().flatMap(d -> d.getCourses().stream()).max(Comparator.comparing(Course::getDifficulty));
+        return departments.stream().flatMap(d -> d.getCourses().stream())
+                .max(Comparator.comparingInt(Course::getDifficulty));
     }
 
     public Map<Integer, List<Course>> groupByDifficulty() {
         return departments.stream().flatMap(d -> d.getCourses().stream())
-                .collect(Collectors.groupingBy(Course::getDifficulty));
+                .collect(Collectors.groupingBy(Course::getDifficulty,
+                            Collectors.toList()));
     }
 
     public Map<String, Integer> getCourseEnrollmentMap() {
-        return departments.stream().flatMap(d->d.getCourses().stream())
+        return departments.stream().flatMap(d -> d.getCourses().stream())
                 .collect(Collectors.toMap(Course::getCode, Course::getEnrolledStudents));
     }
 
     public double getAverageEnrollmentPerCourse() {
-        return departments.stream().flatMap(d->d.getCourses().stream())
+        return departments.stream().flatMap(d -> d.getCourses().stream())
                 .collect(Collectors.averagingDouble(Course::getEnrolledStudents));
     }
 
     public List<String> getSortedCourseCodes() {
-        return departments.stream().flatMap(d->d.getCourses().stream().map(Course::getCode))
+        return departments.stream().flatMap(d -> d.getCourses().stream().map(Course::getCode))
                 .sorted().collect(Collectors.toList());
     }
 
@@ -128,23 +128,23 @@ class University {
     }
 
     public List<Course> getAllCourses() {
-        return departments.stream().flatMap(d->d.getCourses().stream()).collect(Collectors.toList());
+        return departments.stream().flatMap(d -> d.getCourses().stream())
+                .collect(Collectors.toList());
     }
 
     public Optional<Department> getMostPopularDepartment() {
-//        return departments.stream().max(Comparator.comparing(
-//                d-> (Integer) d.getCourses().stream().mapToInt(Course::getEnrolledStudents).sum()
-//        ));
-        return departments.stream().collect(Collectors.toMap(Function.identity(),
-                        d -> (Integer) d.getCourses().stream().mapToInt(Course::getEnrolledStudents).sum()))
-                .entrySet().stream().max(Comparator.comparing(Map.Entry::getValue)).map(Map.Entry::getKey);
+        return departments.stream().max(Comparator.comparing(
+                d -> (Integer) d.getCourses().stream()
+                        .mapToInt(Course::getEnrolledStudents).sum()
+        ));
     }
 
     public Map<Integer, Integer> getStudentsByDifficulty() {
-        return departments.stream()
-                .flatMap(d -> d.getCourses().stream())
-                .collect(Collectors.groupingBy(Course::getDifficulty,
-                        Collectors.summingInt(Course::getEnrolledStudents)));
+        return departments.stream().flatMap(d -> d.getCourses().stream())
+                .collect(Collectors.groupingBy(
+                        Course::getDifficulty,
+                        Collectors.summingInt(Course::getEnrolledStudents)
+                ));
     }
 
     public List<Course> getCoursesByDifficultyRange(int min, int max) {
@@ -156,22 +156,23 @@ class University {
     public List<String> getPopularCourseCodes(int minStudents) {
         return departments.stream().flatMap(d -> d.getCourses().stream())
                 .filter(c -> c.getEnrolledStudents()>=minStudents)
-                .map(Course::getCode).collect(Collectors.toList());
+                .map(Course::getCode)
+                .collect(Collectors.toList());
     }
 
     public Map<String, Integer> getTotalCreditsPerDepartment() {
-        return departments.stream().collect(
-                Collectors.toMap(
+        return departments.stream()
+                .collect(Collectors.toMap(
                         Department::getName,
-                        d-> (Integer) d.getCourses().stream().mapToInt(Course::getCredits).sum()
-                )
-        );
+                        d -> d.getCourses().stream().mapToInt(Course::getCredits).sum()
+                ));
     }
 
     public List<Course> getTop3HardestCourses() {
-        return departments.stream().flatMap(d -> d.getCourses().stream())
-                .sorted(Comparator.comparing(Course::getDifficulty, Comparator.reverseOrder())).limit(3)
-                .collect(Collectors.toList());
+        return departments.stream()
+                .flatMap(d -> d.getCourses().stream())
+                .sorted(Comparator.comparing(Course::getDifficulty, Comparator.reverseOrder()))
+                .limit(3).collect(Collectors.toList());
     }
 
 
@@ -179,7 +180,9 @@ class University {
         return departments.stream().collect(
                 Collectors.toMap(
                         Department::getName,
-                        d -> d.getCourses().stream().collect(Collectors.averagingDouble(Course::getDifficulty))
+                        d -> d.getCourses().stream().collect(
+                                Collectors.averagingDouble(Course::getDifficulty)
+                        )
                 )
         );
     }
@@ -193,28 +196,41 @@ class University {
 
 
     public University mergeFourSmallestDepartments() {
-        Department fourSmallest = departments.stream().sorted(
-                        Comparator.comparing(
-                                d -> (Integer) d.getCourses().stream().mapToInt(Course::getEnrolledStudents).sum()))
-                .limit(4).reduce((d1, d2) -> {
-                    String name = d1.getName() + " & " + d2.getName();
-                    List<Course> merged = new ArrayList<>();
-                    merged.addAll(d1.getCourses());
-                    merged.addAll(d2.getCourses());
-                    return new Department(name, merged);
-                }).orElse(null);
-        List<Department> departments1 = departments.stream().sorted(Comparator.comparing(d -> d.getCourses().stream().mapToInt(Course::getEnrolledStudents).sum()))
-                .skip(4).collect(Collectors.toList());
-        departments1.add(fourSmallest);
+        List<Department> departments1 = departments.stream().sorted(Comparator
+                .comparing(
+                        d -> d.getCourses().stream().mapToInt(Course::getEnrolledStudents).sum()
+                )).skip(4).collect(Collectors.toList());
+        departments1.add(departments.stream().sorted(Comparator.comparing(
+                d -> d.getCourses().stream().mapToInt(Course::getEnrolledStudents).sum()
+        )).limit(4).reduce((d1,d2) -> {
+            String name = d1.getName() + " & " + d2.getName();
+            List<Course> novList = new ArrayList<>(d1.getCourses());
+            novList.addAll(d2.getCourses());
+            return new Department(name, novList);
+        }).orElse(null));
         return new University(departments1);
+    }
+    List<Course> getCourseWithNameContaining(String substring) {
+        return departments.stream().flatMap(d -> d.getCourses().stream())
+                .filter(c -> c.getName().contains(substring))
+                .collect(Collectors.toList());
+    }
+    Optional<Department> getTopDepartmentByAverageDifficulty() {
+        return departments.stream().max(
+                Comparator.comparing(
+                        d -> d.getCourses().stream().collect(
+                                Collectors.averagingInt(Course::getDifficulty)
+                        )
+                ));
     }
     int getTotalCredits() {
         return departments.stream().flatMap(d -> d.getCourses().stream())
-                .collect(Collectors.summingInt(Course::getCredits));
+                .mapToInt(Course::getCredits).sum();
     }
     List<Department> getDepartmentsWithAtLeastOneHardCourse(int difficultyThreshold) {
-        return departments.stream().filter(d -> d.getCourses().stream().anyMatch(c-> c.getDifficulty()>=difficultyThreshold))
-                .collect(Collectors.toList());
+        return departments.stream().filter( (Department d) -> d.getCourses().stream()
+                .anyMatch(c -> c.getDifficulty()>=difficultyThreshold)
+        ).collect(Collectors.toList());
     }
 }
 
