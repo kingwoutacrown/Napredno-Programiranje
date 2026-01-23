@@ -1,6 +1,5 @@
 import java.util.*;
 import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 
 class Post {
     private String username;
@@ -35,7 +34,7 @@ class Post {
     }
     @Override
     public String toString() {
-        List<Comment> sorted = comments.stream().sorted(Comparator.comparing(Comment::getAllLikes, Comparator.reverseOrder())).collect(Collectors.toCollection(ArrayList::new));
+        List<Comment> sorted = comments.stream().sorted(new LikeRankingComparator()).collect(Collectors.toCollection(ArrayList::new));
         StringBuilder sb = new StringBuilder();
         sb.append("Post: ");
         sb.append(postContent);
@@ -84,7 +83,8 @@ class Comment {
     public int getIndent() { return indent; }
     @Override
     public String toString() {
-        List<Comment> sorted = replies.stream().sorted(Comparator.comparing(Comment::getAllLikes, Comparator.reverseOrder())).collect(Collectors.toCollection(ArrayList::new));
+        List<Comment> sorted = replies.stream().sorted(new LikeRankingComparator())
+                .collect(Collectors.toCollection(ArrayList::new));
         StringBuilder sb = new StringBuilder();
         sb.append("    ".repeat(indent));
         sb.append("Comment: ").append(content);
@@ -100,6 +100,13 @@ class Comment {
             sb.append(r.toString());
         }
         return sb.toString();
+    }
+}
+
+class LikeRankingComparator implements Comparator<Comment> {
+    @Override
+    public int compare(Comment a,Comment b) {
+        return Integer.compare(b.getAllLikes(),a.getAllLikes());
     }
 }
 public class PostTester {
